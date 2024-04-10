@@ -1,0 +1,31 @@
+BD = []
+
+def cadastrando_user():
+#cadastrar usuario
+
+   cadastro_user = {
+        'login': input("Digite seu login: "),
+        'senha': input("Digite sua senha: "),
+        'role': 'user'
+    }
+   
+   BD.append(cadastro_user)
+
+   return BD
+
+def cadastrando_admin():
+#cadastrar admin
+    cadastro_admin = {
+        'login': input("Digite seu login: "),
+        'senha': input("Digite sua senha: "),
+        'role': 'admin'
+    }
+
+
+
+    BD.append(cadastro_admin)
+    return BD
+
+cadastrando_admin()
+
+print(BD)
