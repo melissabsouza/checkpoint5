@@ -6,7 +6,7 @@ def validador_RG(rg):
         soma += int(digito) * num
         num -= 1
 
-        dv = soma % 11                                                 
+        dv = soma % 11
 
     if ((dv == 10) & (rg[-1] == 'X')):
         return(True)
@@ -16,4 +16,4 @@ def validador_RG(rg):
         return(False)
     
 def validador_cpf(cpf):
-    
+    ...
