@@ -1,7 +1,8 @@
 # RM552525 - Melissa Barbosa de Souza
-from validador import validador_RG
+
+
+from cadastrar_user import menu_cad
 from login import validar_usuario
-from login import validar_senha
 #Menu
 
 print("1 - Validação de Login e Senha\n"
@@ -16,4 +17,4 @@ match opcao:
     case '1':
         validar_usuario()
     case '2':
-        ...
+        menu_cad()
