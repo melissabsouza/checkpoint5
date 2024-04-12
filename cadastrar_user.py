@@ -1,9 +1,24 @@
 from login import validar_usuario
 from validador import validar_senha
 from numero_primo import maior_numero_primo
+from salvar_json import salvar_bd
+from salvar_json import abrir_bd
+
 
 numero_input = int(input("Digite um numero: "))
 print(f'o maior numero primo menor que "{numero_input}" é {maior_numero_primo(numero_input)}')
+
+def gerar_user_id(login, senha_hashed):
+    dados = login + str(senha_hashed)
+    user_id = 0
+
+    for char in dados:
+        user_id += ord(char)
+
+    return user_id
+
+
+
 
 def hashed(senha, numero_input):
     senha_ord = ''
@@ -16,7 +31,7 @@ def hashed(senha, numero_input):
 
 
 def validar_login_senha(login, senha):
-    
+
     senha_hash = hashed(senha, numero_input)
 
     if validar_senha(senha):
@@ -33,8 +48,11 @@ def validar_login_senha(login, senha):
         return False
 
 def cadastrando(login, senha, role, BD, numero_input):
+    senha_hashed = hashed(senha, numero_input)
+    user_id = gerar_user_id(login, senha_hashed)
 
     cadastro_user = {
+        'id': user_id,
         'login': login,
         'senha': hashed(senha, numero_input),
         'role': role
@@ -74,7 +92,7 @@ def atualizar_cadastro(BD):
     print("Usuário não encontrado ou senha incorreta.")
 
 
-def menu_cad():
+def menu_cad(BD, nome_arquivo):
 
     BD = []
     while True:
@@ -90,12 +108,16 @@ def menu_cad():
                 senha = input("digite sua senha: ")
                 role = input("Digite seu role (admin ou user): ")
                 BD = cadastrando(login, senha, role, BD, numero_input)
+                salvar_bd(nome_arquivo, BD)
                 print(BD)
             case '2':
                 atualizar_cadastro(BD)
+                salvar_bd(nome_arquivo, BD)
             case '3':
                 break
             case _:
                 print('opção inválida')
 
-menu_cad()
+arquivo = 'users.json'
+BD = abrir_bd(arquivo)
+menu_cad(BD, arquivo)
