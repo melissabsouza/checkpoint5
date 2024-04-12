@@ -11,6 +11,7 @@ class DocumentoInvalido(ValueError):
 class ExpressaoInvalida(ValueError):
     pass
 
+#Questao 1 - verifica p tipo de login
 
 def validar_usuario(login):
     print("Qual seu tipo de Login?\n"
