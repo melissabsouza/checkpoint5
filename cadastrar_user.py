@@ -1,3 +1,4 @@
+import requests
 from login import validar_usuario
 from validador import validar_senha
 from numero_primo import maior_numero_primo
@@ -56,6 +57,14 @@ def cadastrando(login, senha, role, BD, numero_input):
         'login': login,
         'senha': hashed(senha, numero_input),
         'role': role
+        'poke_human':{
+            'name':
+            'abilities': {
+                'nomes': ()
+                'efeitos': []
+                
+            }
+        }
     }
 
     role.lower()
