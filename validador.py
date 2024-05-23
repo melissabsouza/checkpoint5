@@ -1,4 +1,4 @@
-#Questãoo 1
+#Questão 1
 
 import re
 
@@ -70,8 +70,8 @@ def validador_username(login):
 
 def validar_senha(senha):
         try:
-            if len(str(senha)) > 9:
-                raise SenhaInvalida("Senha não pode ter mais que 9 digitos")
+            if len(str(senha)) < 15:
+                raise SenhaInvalida("Senha não pode ter menos que 15 digitos")
             elif senha.isalpha() :
                 raise SenhaInvalida("A senha necessita de números")
             elif senha.isalnum() :
