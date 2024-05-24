@@ -1,6 +1,6 @@
 import requests
 from login import validar_usuario
-from validador import validar_senha
+from validador import *
 from numero_primo import maior_numero_primo
 from salvar_json import salvar_bd
 from salvar_json import abrir_bd
@@ -48,31 +48,37 @@ def validar_login_senha(login, senha):
         print("Usuário inválido")
         return False
 
-def cadastrando(login, senha, role, BD, numero_input):
+def cadastrando(login, senha, role, email, nome, rg, cpf, data_nascimento, endereco, BD, numero_input):
     senha_hashed = hashed(senha, numero_input)
     user_id = gerar_user_id(login, senha_hashed)
 
     cadastro_user = {
         'id': user_id,
         'login': login,
+        'e-mail': email,
+        'nome': nome,
+        'RG': rg,
+        'cpf': cpf,
+        'data-nascimento': data_nascimento,
         'senha': hashed(senha, numero_input),
+        'endereco': endereco,
         'role': role
         
     }
 
     role.lower()
 
-    if validar_login_senha(login, senha) == True:
-        print("Login e senha válidos")
+    if validar_login_senha(login, senha) == True and validador_email(email) == True and validador_CPF(cpf) == True and validador_RG(rg) == True:
+        print("Válido")
         if role == 'admin' or role == 'user':
             print("role válido!")
-            print("Usuário cadastrado com sucesso!")
             BD.append(cadastro_user)
+            print("Usuário cadastrado com sucesso!")
         else:
-            print("usuario não cadastrado, role inválido")
+            print("usuario não cadastrado: role inválido")
             return False
     else:
-        print('login ou senha inválidos, não adicionado na lista')
+        print('usuario não cadastrado: e-mail, cpf ou rg inválidos')
     return BD
 
 def atualizar_cadastro(BD):
