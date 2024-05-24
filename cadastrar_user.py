@@ -1,9 +1,12 @@
+#CRUD
+
 import oracledb
 from login import validar_usuario
 from validador import *
 from numero_primo import maior_numero_primo
 from db import *
 
+from pprint import pprint
 
 numero_input = int(input("Digite um numero: "))
 print(f'o maior numero primo menor que "{numero_input}" é {maior_numero_primo(numero_input)}')
@@ -17,21 +20,12 @@ def gerar_user_id(login, senha_hashed):
 
     return user_id
 
-
-
-
 def hashed(senha, numero_input):
-    senha_ord = ''
-    for c in senha:
-        senha_ord += str(ord(c))
-
+    senha_ord = ''.join(str(ord(c)) for c in senha)
     senha_hash = int(senha_ord) % maior_numero_primo(numero_input)
-
     return senha_hash
 
-
 def validar_login_senha(login, senha):
-
     senha_hashed = hashed(senha, numero_input)
 
     if validar_senha(senha):
@@ -65,14 +59,13 @@ def create_sign_up():
         senha_hashed = hashed(senha, numero_input)
         user_id = gerar_user_id(login, senha_hashed)
 
-
         if validar_login_senha(login, senha) and validador_email(email) and validador_CPF(cpf) and validador_RG(rg):
             print("Válido")
             if role in ['admin', 'user']:
                 query = """
                 INSERT INTO CADASTRO_CP
-                (id, login, senha, email, nome, rg, cpf, data_nascimento, endereco, role) 
-                VALUES (:id, :login, :senha, :email, :nome, :rg, :cpf, :data_nascimento, :endereco, :role)
+                (id, login, senha, email, nome, rg, cpf, data_nascimento, endereco) 
+                VALUES (:id, :login, :senha, :email, :nome, :rg, :cpf, :data_nascimento, :endereco)
                 """
                 cursor.execute(query, {
                     'id': user_id,
@@ -84,6 +77,16 @@ def create_sign_up():
                     'cpf': cpf,
                     'data_nascimento': data_nascimento,
                     'endereco': endereco,
+                })
+
+                query_login = """
+                INSERT INTO LOGIN_CP
+                (id, login, senha, role) VALUES (:id, :login, :senha, :role)
+                """
+                cursor.execute(query_login, {
+                    'id': user_id,
+                    'login': login,
+                    'senha': senha_hashed,
                     'role': role
                 })
                 conn.commit()
@@ -114,50 +117,51 @@ def read_by_user(login):
         cursor.close()
         conn.close()
 
+def delete_by_user(login):
+    conn, cursor = create_oracle_connection()
+    try:
+        query = "DELETE FROM CADASTRO_CP WHERE login = :login"
+        query_2 = "DELETE FROM LOGIN_CP WHERE login = :login"
+        cursor.execute(query, {'login': login})
+        cursor.execute(query_2, {'login': login})
+        conn.commit()
+    except oracledb.DatabaseError as e:
+        print(f"Erro ao excluir: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
-def atualizar_cadastro(BD):
-    login_atual = input("Digite o login atual: ")
-    senha_atual = input("Digite a senha atual: ")
-    novo_login = input("Digite o novo login: ")
-    nova_senha = input("Digite a nova senha: ")
+def att_cadastro(login, updates):
+    conn, cursor = create_oracle_connection()
+    try:
+        # Verifica os campos válidos na tabela CADASTRO_CP
+        valid_columns = set()
+        cursor.execute("SELECT column_name FROM all_tab_columns WHERE table_name = 'CADASTRO_CP'")
+        for row in cursor.fetchall():
+            valid_columns.add(row[0].lower())
+        
+        
+        updates = {k: v for k, v in updates.items() if k.lower() in valid_columns}
+        
+        set_clause = ', '.join([f"{key} = :{key}" for key in updates.keys()])
+        updates['original_login'] = login
+        query = f"UPDATE CADASTRO_CP SET {set_clause} WHERE login = :original_login"
+        
+        
+        cursor.execute(query, updates)
+        
+        
+        login_cp_updates = {k: updates[k] for k in ['login', 'senha'] if k in updates}
+        if login_cp_updates:
+            set_clause = ', '.join([f"{key} = :{key}" for key in login_cp_updates.keys()])
+            login_cp_updates['original_login'] = login
+            query_2 = f"UPDATE LOGIN_CP SET {set_clause} WHERE login = :original_login"
+            cursor.execute(query_2, login_cp_updates)
 
-    nova_senha_hashed = hashed(nova_senha, numero_input)
-
-    for usuario in BD:
-        if usuario['login'] == login_atual and usuario['senha'] == hashed(senha_atual, numero_input):
-            usuario['login'] = novo_login
-            usuario['senha'] = nova_senha_hashed
-            print("Cadastro atualizado")
-            print(BD)
-            return
-
-    print("Usuário não encontrado ou senha incorreta.")
-
-
-def menu_cad():
-
-    while True:
-        print('\tCadastrando usuários\n'
-            + '1 - Cadastrar\n'
-            + '2 - Ler Cadastro\n'
-            + '3 - Excluir Cadastro\n'
-            + '4 - Alterar Cadastro\n'
-            + '5 - Sair')
-        opcao = input("Digite uma opcão: ")
-
-        match opcao:
-            case '1':
-                create_sign_up()
-            case '2':
-                login = input("Digite o username para filtrar: ")
-                resultado_username = read_by_user(login)
-                if resultado_username:
-                    print(read_by_user(login))
-            case '3':
-                ...
-            case '5':
-                break
-            case _:
-                print('opção inválida')
-
-menu_cad()
+        conn.commit()
+        print("Atualizado!")
+    except oracledb.DatabaseError as e:
+        print(f"Erro ao atualizar registro: {e}")
+    finally:
+        cursor.close()
+        conn.close()
