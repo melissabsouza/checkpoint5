@@ -17,7 +17,7 @@ def validar_usuario(login):
     print("Qual seu tipo de Login?\n"
           + "1 - RG\n"
           + "2 - CPF\n"
-          + "3 - E-mail\n"
+          + " 3 - E-mail\n"
           + "4 - Username\n")
     
     tipo_login = input("Digite uma opção: ")
