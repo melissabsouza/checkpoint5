@@ -7,9 +7,7 @@ from login import validar_usuario
 
 print("1 - Validação de Login e Senha\n"
       + "2 - Cadastrando usuários\n"
-      + "4 - Encontrar número primo\n"
-      + "5 - Atualizar Login e Senha\n"
-      + "6 - Encontrar Pokemon\n")
+      + "5 - Atualizar Login e Senha\n")
 
 opcao = input("\nDigite uma opção: ")
 

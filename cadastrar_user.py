@@ -1,9 +1,8 @@
-import requests
+import oracledb
 from login import validar_usuario
 from validador import *
 from numero_primo import maior_numero_primo
-from salvar_json import salvar_bd
-from salvar_json import abrir_bd
+from db import *
 
 
 numero_input = int(input("Digite um numero: "))
@@ -33,7 +32,7 @@ def hashed(senha, numero_input):
 
 def validar_login_senha(login, senha):
 
-    senha_hash = hashed(senha, numero_input)
+    senha_hashed = hashed(senha, numero_input)
 
     if validar_senha(senha):
         print("Senha válida")
@@ -48,38 +47,73 @@ def validar_login_senha(login, senha):
         print("Usuário inválido")
         return False
 
-def cadastrando(login, senha, role, email, nome, rg, cpf, data_nascimento, endereco, BD, numero_input):
-    senha_hashed = hashed(senha, numero_input)
-    user_id = gerar_user_id(login, senha_hashed)
+def create_sign_up():
+    conn, cursor = create_oracle_connection()
 
-    cadastro_user = {
-        'id': user_id,
-        'login': login,
-        'e-mail': email,
-        'nome': nome,
-        'RG': rg,
-        'cpf': cpf,
-        'data-nascimento': data_nascimento,
-        'senha': hashed(senha, numero_input),
-        'endereco': endereco,
-        'role': role
-        
-    }
+    try:
+        print("Criando cadastro...")
+        login = input("Digite seu login: ")
+        email = input("Digite seu email: ")
+        nome = input("Digite seu nome: ")
+        rg = input("Digite seu RG: ")
+        cpf = input("Digite seu CPF: ")
+        data_nascimento = input("Digite sua data de nascimento: ")
+        senha = input("Digite sua senha: ")
+        endereco = input("Digite seu endereco: ")
+        role = 'user'
 
-    role.lower()
+        senha_hashed = hashed(senha, numero_input)
+        user_id = gerar_user_id(login, senha_hashed)
 
-    if validar_login_senha(login, senha) == True and validador_email(email) == True and validador_CPF(cpf) == True and validador_RG(rg) == True:
-        print("Válido")
-        if role == 'admin' or role == 'user':
-            print("role válido!")
-            BD.append(cadastro_user)
-            print("Usuário cadastrado com sucesso!")
+
+        if validar_login_senha(login, senha) and validador_email(email) and validador_CPF(cpf) and validador_RG(rg):
+            print("Válido")
+            if role in ['admin', 'user']:
+                query = """
+                INSERT INTO CADASTRO_CP
+                (id, login, senha, email, nome, rg, cpf, data_nascimento, endereco, role) 
+                VALUES (:id, :login, :senha, :email, :nome, :rg, :cpf, :data_nascimento, :endereco, :role)
+                """
+                cursor.execute(query, {
+                    'id': user_id,
+                    'login': login,
+                    'senha': senha_hashed,
+                    'email': email,
+                    'nome': nome,
+                    'rg': rg,
+                    'cpf': cpf,
+                    'data_nascimento': data_nascimento,
+                    'endereco': endereco,
+                    'role': role
+                })
+                conn.commit()
+
+                print("Cadastro criado com sucesso!")
+            else:
+                print('Role inválido')
         else:
-            print("usuario não cadastrado: role inválido")
-            return False
-    else:
-        print('usuario não cadastrado: e-mail, cpf ou rg inválidos')
-    return BD
+            print('Usuário não cadastrado: e-mail, cpf ou rg inválidos')
+    except oracledb.DatabaseError as e:
+        print(f"Erro ao criar cadastro: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+def read_by_user(login):
+    conn, cursor = create_oracle_connection()
+    try:
+        query = "SELECT * FROM CADASTRO_CP WHERE login = :login"
+        cursor.execute(query, {'login': login})
+        results = cursor.fetchall()
+        columns = [col[0] for col in cursor.description]
+
+        return [dict(zip(columns, row)) for row in results]
+    except oracledb.DatabaseError as e:
+        print(f"Erro na consulta: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def atualizar_cadastro(BD):
     login_atual = input("Digite o login atual: ")
@@ -100,32 +134,30 @@ def atualizar_cadastro(BD):
     print("Usuário não encontrado ou senha incorreta.")
 
 
-def menu_cad(BD, arquivo):
+def menu_cad():
 
-    BD = []
     while True:
         print('\tCadastrando usuários\n'
             + '1 - Cadastrar\n'
-            + '2 - Atualizar cadastro\n'
-            + '3 - Sair')
+            + '2 - Ler Cadastro\n'
+            + '3 - Excluir Cadastro\n'
+            + '4 - Alterar Cadastro\n'
+            + '5 - Sair')
         opcao = input("Digite uma opcão: ")
 
         match opcao:
             case '1':
-                login = input("Digite seu login: ")
-                senha = input("digite sua senha: ")
-                role = input("Digite seu role (admin ou user): ")
-                BD = cadastrando(login, senha, role, BD, numero_input)
-                salvar_bd(arquivo, BD)
-                print(BD)
+                create_sign_up()
             case '2':
-                atualizar_cadastro(BD)
-                salvar_bd(arquivo, BD)
+                login = input("Digite o username para filtrar: ")
+                resultado_username = read_by_user(login)
+                if resultado_username:
+                    print(read_by_user(login))
             case '3':
+                ...
+            case '5':
                 break
             case _:
                 print('opção inválida')
 
-arquivo = 'users.json'
-BD = abrir_bd(arquivo)
-menu_cad(BD, arquivo)
+menu_cad()
